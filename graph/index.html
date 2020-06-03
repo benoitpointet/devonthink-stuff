@@ -1,0 +1,32 @@
+<!DOCTYPE HTML>
+  <html>
+  <head>
+  <style type="text/css">
+    #container {
+      top: 10%;
+      bottom: 10%;
+      left: 10%;
+      right: 10%;
+      position: absolute;
+    }
+  </style>
+  </head>
+  <body>
+  <div id="container"></div>
+  <script src="sigma.min.js"></script>
+  <script src="sigma.parsers.json.min.js"></script>
+  <script src="sigma.layout.forceAtlas2.min.js"></script>
+  <script>
+    sigma.parsers.json('data.json', {
+      container: 'container',
+      settings: {
+        defaultNodeColor: '#ec5148'
+      }},
+      function(s) {
+        s.startForceAtlas2();
+        s.refresh();
+      }
+    );
+  </script>
+  </body>
+  </html>
