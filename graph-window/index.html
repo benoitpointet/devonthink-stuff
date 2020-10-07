@@ -24,6 +24,17 @@
         },
       settings: {}
     });
+
+    function graphThis(graphJSON) {
+      s.graph.read(graphJSON);
+      s.startForceAtlas2({
+        startingIterations: 10,
+        worker: true,
+        iterationsPerRender: 10
+      });
+      s.graph.refresh();
+      window.setTimeout(function() {s.killForceAtlas2(); window.alert('0');}, 5000);
+    }
   </script>
 </body>
 </html>
