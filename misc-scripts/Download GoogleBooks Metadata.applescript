@@ -32,7 +32,8 @@ end wrapperScript
 on mainScript(theRecord)
 	tell application id "DNtp"
 		set theName to name of theRecord
-		step progress indicator theName
+		set parsedName to my findAndReplaceInText(theName, "-", " ")
+		step progress indicator parsedName
 		
 		set customMetaData to custom meta data of theRecord
 		
@@ -55,7 +56,7 @@ on mainScript(theRecord)
 			
 			-- … else use record name as querystring
 			if isbn is "" then
-				set queryString to name of theRecord
+				set queryString to parsedName
 			end if
 			
 			set the queryURL to "https://www.googleapis.com/books/v1/volumes?q=" & queryString
@@ -88,7 +89,7 @@ on mainScript(theRecord)
 			set {theButtons, minWidth} to create buttons {"Cancel", "OK"} default button 2 given «class btns»:2
 			if minWidth > accViewWidth then set accViewWidth to minWidth -- make sure buttons fit
 			set {BookChooser, popupLabel, theTop} to create labeled popup matches left inset 0 bottom (theTop + 8) popup width 500 max width 700 label text "Job is for:" popup left 0
-			set {boldLabel, theTop} to create label ("Match record :" & return & "'" & (name of theRecord) & "'") bottom theTop + 20 max width accViewWidth control size large size aligns center aligned with bold type
+			set {boldLabel, theTop} to create label ("Match record :" & return & "'" & (parsedName) & "'") bottom theTop + 20 max width accViewWidth control size large size aligns center aligned with bold type
 			set allControls to {BookChooser, boldLabel}
 			set {buttonName, controlsResults} to display enhanced window "Match record to Google Books entry" acc view width accViewWidth acc view height theTop acc view controls allControls buttons theButtons with align cancel button
 			
@@ -170,3 +171,13 @@ on mainScript(theRecord)
 		end if
 	end tell
 end mainScript
+
+-- substitution fct
+on findAndReplaceInText(theText, theSearchString, theReplacementString)
+	set AppleScript's text item delimiters to theSearchString
+	set theTextItems to every text item of theText
+	set AppleScript's text item delimiters to theReplacementString
+	set theText to theTextItems as string
+	set AppleScript's text item delimiters to ""
+	return theText
+end findAndReplaceInText
