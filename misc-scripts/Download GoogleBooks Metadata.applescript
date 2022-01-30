@@ -42,7 +42,7 @@ on mainScript(theRecord)
 		try
 			set gbid to mdgbid of customMetaData
 		end try
-		if gbid is not "" then
+		if gbid is not "" then -- if the record already has a GBID
 			set the queryURL to "https://www.googleapis.com/books/v1/volumes/" & gbid
 			set the json_gbid_result to download JSON from queryURL
 			set the json_result to {|items|:[json_gbid_result], totalItems:1}
@@ -63,10 +63,15 @@ on mainScript(theRecord)
 			set the json_result to download JSON from queryURL
 		end if
 		
+		if ((totalItems of json_result) as integer) is equal to 1 then
+			set json_record to item 1 of |items| of json_result
+			my importData(theRecord, json_record)
+		end if
+		
 		-- proposes the list of matches and lets choose the right match
-		set matches to {}
-		set counter to 0
-		if ((totalItems of json_result) as integer) is greater than 0 then
+		if ((totalItems of json_result) as integer) is greater than 1 then
+			set matches to {}
+			set counter to 0
 			repeat with json_record in |items| of json_result
 				set entry to volumeInfo of json_record
 				try
@@ -94,83 +99,90 @@ on mainScript(theRecord)
 			set {buttonName, controlsResults} to display enhanced window "Match record to Google Books entry" acc view width accViewWidth acc view height theTop acc view controls allControls buttons theButtons with align cancel button
 			
 			if buttonName is "OK" then
-				
 				set selectedMatch to ((get character 1 of item 1 of controlsResults) as integer) + 1
 				
 				set json_record to item selectedMatch of |items| of json_result
 				
-				set URL of theRecord to selfLink of json_record
-				
-				set theGBID to "-"
-				try
-					set theGBID to |id| of json_record
-				end try
-				add custom meta data theGBID for "gbid" to theRecord
-				
-				set json_record to volumeInfo of json_record
-				
-				set theTitle to ""
-				try
-					set theTitle to title of json_record
-					add custom meta data theTitle for "title" to theRecord
-				end try
-				
-				set theSubtitle to ""
-				try
-					set theSubtitle to subtitle of json_record
-					add custom meta data theSubtitle for "subtitle" to theRecord
-				end try
-				
-				set thePubYear to ""
-				try
-					set thePubYear to word 1 of publishedDate of json_record
-					add custom meta data thePubYear for "publication-year" to theRecord
-				end try
-				
-				set theIsbn13 to ""
-				try
-					repeat with i in industryIdentifiers of json_record
-						if |type| of i is "ISBN_13" then
-							set theIsbn13 to identifier of i
-						end if
-					end repeat
-					add custom meta data theIsbn13 for "is?n" to theRecord
-				end try
-				
-				set the publisher to ""
-				try
-					set the publisher to publisher of json_record
-					add custom meta data publisher for "publisher" to theRecord
-				end try
-				
-				set the authorsList to ""
-				set authors to ""
-				try
-					set the authors to authors of json_record
-					set cnt to count of authors
-					
-					set theTags to (get tags of theRecord)
-					repeat with author in authors
-						set total to count of author
-						set family to word -1 of author
-						set |given| to characters 1 through (total - (count of family)) of author
-						set authorTag to family & ", " & |given|
-						set authorsList to authorsList & " " & author & return -- return ensures that DEVONthink automatically defines this field as text and not as a string
-						set theNewTag to (authorTag)
-						set end of theTags to theNewTag
-						-- todo fix issue with tag aliases not taken
-					end repeat
-					
-					set the tags of theRecord to theTags
-					add custom meta data authorsList for "authors" to theRecord
-				end try
-				
-				set theRecord's name to theTitle & " - " & theSubtitle & " - " & (item 1 of authors) & " - " & thePubYear
+				my importData(theRecord, json_record)
 			end if
 			
 		end if
 	end tell
 end mainScript
+
+on importData(theRecord, json_record)
+	tell application id "DNtp"
+		
+		set theGBID to "-"
+		try
+			set theGBID to |id| of json_record
+		end try
+		add custom meta data theGBID for "gbid" to theRecord
+		
+		set json_record to volumeInfo of json_record
+		
+		set URL of theRecord to previewLink of json_record
+		
+		set theTitle to ""
+		try
+			set theTitle to title of json_record
+			add custom meta data theTitle for "title" to theRecord
+		end try
+		
+		set theSubtitle to ""
+		try
+			set theSubtitle to subtitle of json_record
+			add custom meta data theSubtitle for "subtitle" to theRecord
+		end try
+		
+		set thePubYear to ""
+		try
+			set thePubYear to word 1 of publishedDate of json_record
+			add custom meta data thePubYear for "publication-year" to theRecord
+		end try
+		
+		set theIsbn13 to ""
+		try
+			repeat with i in industryIdentifiers of json_record
+				if |type| of i is "ISBN_13" then
+					set theIsbn13 to identifier of i
+				end if
+			end repeat
+			add custom meta data theIsbn13 for "is?n" to theRecord
+		end try
+		
+		set the publisher to ""
+		try
+			set the publisher to publisher of json_record
+			add custom meta data publisher for "publisher" to theRecord
+		end try
+		
+		set the authorsList to ""
+		set authors to ""
+		try
+			set the authors to authors of json_record
+			set cnt to count of authors
+			
+			set theTags to (get tags of theRecord)
+			repeat with author in authors
+				set total to count of author
+				set family to word -1 of author
+				set |given| to characters 1 through (total - (count of family)) of author
+				set authorTag to family & ", " & |given|
+				set authorsList to authorsList & " " & author & return -- return ensures that DEVONthink automatically defines this field as text and not as a string
+				set theNewTag to (authorTag)
+				set end of theTags to theNewTag
+				-- todo fix issue with tag aliases not taken
+			end repeat
+			
+			set the tags of theRecord to theTags
+			add custom meta data authorsList for "authors" to theRecord
+		end try
+		
+		set theRecord's name to theTitle & " - " & theSubtitle & " - " & (item 1 of authors) & " - " & thePubYear
+		
+	end tell
+end importData
 
 -- substitution fct
 on findAndReplaceInText(theText, theSearchString, theReplacementString)
