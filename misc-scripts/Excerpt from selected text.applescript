@@ -5,7 +5,7 @@
 property suffix : " (excerpt)"
 property prefix : ""
 property askName : false -- false : the name is generated based on item name, prefix and suffix variables; true : a name is asked for
-property askGroup : true -- false : the current group of the item is used as target group (if many then Inbox); true : the sorter will be used to select target group for the excerpt
+property askGroup : false -- false : the current group of the item is used as target group (if many then Inbox); true : the sorter will be used to select target group for the excerpt
 property openAfter : false -- false : creates but does not open in a new window; true : opens after creation
 
 tell application id "DNtp"
@@ -13,8 +13,9 @@ tell application id "DNtp"
 	set thisItem to content record
 	
 	set theText to selected text of think window 1
+	set theText to (return & theText) -- adding a first white line to avoid the thing with metadata 
 	
-	if theText is {} then
+	if theText is "" then
 		error "Select some text"
 	end if
 	
@@ -28,7 +29,7 @@ tell application id "DNtp"
 		set thePage to "?page=" & ((the current page of think window 1) as string)
 	end if
 	
-	set theGroup to parent of thisItem
+	set theGroup to item 1 of parent of thisItem
 	if askGroup then
 		set theGroup to display group selector
 	end if
