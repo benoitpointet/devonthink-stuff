@@ -42,70 +42,79 @@ on mainScript(theRecord)
 		try
 			set gbid to mdgbid of customMetaData
 		end try
-		if gbid is not "" then -- if the record already has a GBID
-			set the queryURL to "https://www.googleapis.com/books/v1/volumes/" & gbid
-			set the json_gbid_result to download JSON from queryURL
-			set the json_result to {|items|:[json_gbid_result], totalItems:1}
-		else -- if no gbid, then go for isbn …
-			set isbn to ""
-			set queryString to ""
-			try
-				set isbn to |mdis?n| of customMetaData
-				set queryString to "isbn:" & isbn
-			end try
-			
-			-- … else use record name as querystring
-			if isbn is "" then
-				set queryString to parsedName
+		
+		if gbid is not "-" then -- skip dashed GBIDs
+			if gbid is not "" then -- if the record already has a GBID
+				set the queryURL to "https://www.googleapis.com/books/v1/volumes/" & gbid
+				set the json_gbid_result to download JSON from queryURL
+				set the json_result to {|items|:[json_gbid_result], totalItems:1}
+			else -- if no gbid, then go for isbn …
+				set isbn to ""
+				set queryString to ""
+				try
+					set isbn to |mdis?n| of customMetaData
+					set queryString to "isbn:" & isbn
+				end try
+				
+				-- … else use record name as querystring
+				if isbn is "" then
+					set queryString to parsedName
+				end if
+				
+				set the queryURL to "https://www.googleapis.com/books/v1/volumes?q=" & queryString
+				set the json_result to download JSON from queryURL
 			end if
-			
-			set the queryURL to "https://www.googleapis.com/books/v1/volumes?q=" & queryString
-			set the json_result to download JSON from queryURL
-		end if
-		
-		if ((totalItems of json_result) as integer) is equal to 1 then
-			set json_record to item 1 of |items| of json_result
-			my importData(theRecord, json_record)
-		end if
-		
-		-- proposes the list of matches and lets choose the right match
-		if ((totalItems of json_result) as integer) is greater than 1 then
-			set matches to {}
-			set counter to 0
-			repeat with json_record in |items| of json_result
-				set entry to volumeInfo of json_record
-				try
-					set descAuth to get item 1 of authors of entry
-				on error
-					set descAuth to "N/A"
-				end try
-				try
-					set descYear to characters 1 through 4 of publishedDate of entry
-				on error
-					set descYear to "N/A"
-				end try
-				
-				set desc to (counter as string) & ". " & (title of entry) & " - " & descAuth & " - " & descYear
-				set counter to (counter + 1)
-				set end of matches to desc
-			end repeat
-			set accViewWidth to 600
-			set theTop to 0
-			set {theButtons, minWidth} to create buttons {"Cancel", "OK"} default button 2 given «class btns»:2
-			if minWidth > accViewWidth then set accViewWidth to minWidth -- make sure buttons fit
-			set {BookChooser, popupLabel, theTop} to create labeled popup matches left inset 0 bottom (theTop + 8) popup width 500 max width 700 label text "Job is for:" popup left 0
-			set {boldLabel, theTop} to create label ("Match record :" & return & "'" & (parsedName) & "'") bottom theTop + 20 max width accViewWidth control size large size aligns center aligned with bold type
-			set allControls to {BookChooser, boldLabel}
-			set {buttonName, controlsResults} to display enhanced window "Match record to Google Books entry" acc view width accViewWidth acc view height theTop acc view controls allControls buttons theButtons with align cancel button
-			
-			if buttonName is "OK" then
-				set selectedMatch to ((get character 1 of item 1 of controlsResults) as integer) + 1
-				
-				set json_record to item selectedMatch of |items| of json_result
-				
+
+			if ((totalItems of json_result) as integer) is equal to 1 then
+				set json_record to item 1 of |items| of json_result
 				my importData(theRecord, json_record)
 			end if
 			
+			-- proposes the list of matches and lets choose the right match
+			if ((totalItems of json_result) as integer) is greater than 1 then
+				set matches to {}
+				set counter to 0
+				repeat with json_record in |items| of json_result
+					set entry to volumeInfo of json_record
+
+					try
+						set descAuth to get item 1 of authors of entry
+					on error
+						set descAuth to "N/A"
+					end try
+
+					try
+						set descYear to characters 1 through 4 of publishedDate of entry
+					on error
+						set descYear to "N/A"
+					end try
+
+					try
+						set lang to language of entry
+					on error
+						set lang to "N/A"
+					end try
+
+					set desc to (counter as string) & ". " & (title of entry) & " - " & descAuth & " - " & descYear & " - " & lang
+					set counter to (counter + 1)
+					set end of matches to desc
+				end repeat
+				set accViewWidth to 600
+				set theTop to 0
+				set {theButtons, minWidth} to create buttons {"Cancel", "OK"} default button 2 given «class btns»:2
+				if minWidth > accViewWidth then set accViewWidth to minWidth -- make sure buttons fit
+				set {BookChooser, popupLabel, theTop} to create labeled popup matches left inset 0 bottom (theTop + 8) popup width 500 max width 700 label text "Job is for:" popup left 0
+				set {boldLabel, theTop} to create label ("Match record :" & return & "'" & (parsedName) & "'") bottom theTop + 20 max width accViewWidth control size large size aligns center aligned with bold type
+				set allControls to {BookChooser, boldLabel}
+				set {buttonName, controlsResults} to display enhanced window "Match record to Google Books entry" acc view width accViewWidth acc view height theTop acc view controls allControls buttons theButtons with align cancel button
+
+				if buttonName is "OK" then
+					set selectedMatch to ((get character 1 of item 1 of controlsResults) as integer) + 1
+					set json_record to item selectedMatch of |items| of json_result
+					my importData(theRecord, json_record)
+				end if
+
+			end if
 		end if
 	end tell
 end mainScript
