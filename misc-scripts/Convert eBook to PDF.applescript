@@ -42,7 +42,7 @@ on mainScript(theRecord)
 			set URL of theConvertFile to theLink
 			do shell script "rm " & theTmpPath
 			try -- very specific to me
-				add custom meta data "eBook" for "mdtype" to theConvertFile
+				add custom meta data "book-ebook" for "mdtype" to theConvertFile
 			end try
 		end if
 	end tell

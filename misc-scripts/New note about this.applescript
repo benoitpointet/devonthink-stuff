@@ -13,7 +13,7 @@ tell application id "DNtp"
 	set theDocument to create record with {type:markdown, name:theName, URL:theUrl, rich text:return} in theGroup
 	
 	try -- very specific to me
-		add custom meta data "thought-observation" for "mdtype" to theDocument
+		add custom meta data "my-thought-observation" for "mdtype" to theDocument
 	end try
 	
 	open window for record theDocument

@@ -12,12 +12,11 @@ tell application id "DNtp"
 	
 	set thisItem to content record
 	
-	set theText to selected text of think window 1
-	set theText to (return & theText) -- adding a first white line to avoid the thing with metadata 
-	
-	if theText is "" then
+	if (selected text of think window 1) is "" then
 		error "Select some text"
 	end if
+	
+	set theText to the clipboard -- pass by clipboard for we cleanup first
 	
 	set theName to prefix & name of thisItem & suffix
 	if askName then
@@ -29,7 +28,8 @@ tell application id "DNtp"
 		set thePage to "?page=" & ((the current page of think window 1) as string)
 	end if
 	
-	set theGroup to item 1 of parent of thisItem
+	set parentGroups to parents of thisItem where kind is "group"
+	set theGroup to item 1 of parentGroups
 	if askGroup then
 		set theGroup to display group selector
 	end if
