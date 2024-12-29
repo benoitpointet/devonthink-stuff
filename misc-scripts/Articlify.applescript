@@ -9,5 +9,6 @@ on run
 		set exclude from tagging of theGroup to true
 		add custom meta data "article" for "type" to theGroup
 		move record theRecords to theGroup
+		set selection of think window 1 to {theGroup}
 	end tell
 end run
